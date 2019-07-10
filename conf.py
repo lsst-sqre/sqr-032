@@ -20,3 +20,9 @@ g.update(confs)
 # Example:
 #
 #     intersphinx_mapping['python'] = ('https://docs.python.org/3', None)
+intersphinx_mapping.update({
+    'python': ('https://docs.python.org/3', None),
+    'pipelines': ('https://pipelines.lsst.io/v/weekly/', None),
+})
+
+default_role = 'obj'
