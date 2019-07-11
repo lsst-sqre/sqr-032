@@ -59,7 +59,7 @@ This section summarizes the state of ad hoc scripts in the LSST codebase.
 *What are these ad hoc scripts?*
 
 First, ad hoc scripts *are not* command-line tasks (soon to be overhauled with the Generation 3 middleware project), which are included in the :file:`bin.src` directories of packages and that use the `lsst.pipe.base.CmdLineTask` infrastructure.
-These scripts are already documented using the `Task topic type <https://developer.lsst.io/stack/task-topic-type.html>`_ in LSST documentation.
+These scripts are already documented using the `Task topic type`_ in LSST documentation.
 Such task scripts are consistently documented, and centrally indexed. [#taskindex]_
 
 .. [#taskindex] Tasks are listed in package documentation homepages and there are plans, described in :dmtn:`30` to list task by theme so that users can discover appropriate tasks without having to be familiar with the structure of the LSST code base.
@@ -140,6 +140,105 @@ Scripts in languages other than Python
 Not all ad hoc scripts are written in Python.
 For example, run_ci_dataset.sh_ in the :file:`bin` directory of ap_verify_ is a shell script that provides a higher-level interface to the ``ap_verify.py`` script.
 
+Plan for consolidating and documenting scripts
+==============================================
+
+Based on the :ref:`review of existing ad hoc scripts <review-of-scripts>` in the LSST codebase, we can fulfill |13| (in relation to scripts) by introducing a systematic approach to including and documenting scripts in the LSST codebase.
+
+Action: move all scripts to bin.src/ or bin/
+--------------------------------------------
+
+The first improvement we can realize is by ensuring that any executable script provided with an LSST package is shipped in its :file:`bin.src` or :file:`bin` directory. [#setuptoolsscripts]_
+
+.. [#setuptoolsscripts]
+
+   This plan of action applies to EUPS packages.
+   LSST code that is packaged for PyPI with setuptools should instead use the ``console_scripts`` entrypoints feature to install scripts from a package's modules:
+
+   .. code-block:: py
+
+      setup(
+          # ...
+          entry_points={
+              'console_scripts': [
+                  'cliname = package.module:main_function',
+              ]
+          }
+      )
+
+   This has the same effect as putting modules in :file:`bin.src` in an LSST EUPS package.
+
+This will have the effect of making it possible for users to execute scripts without having to address EUPS environment variables.
+Using the :file:`bin.src` directory specifically for Python-based scripts has the benefit of ensuring that the hash-bang is re-written properly to account for SIP security features in macOS.
+Non-Python scripts can go directly in the :file:`bin` directory because shebangtron_ only updates the hash-bangs of Python scripts.
+
+Action: mandate that the core code from scripts should reside in the main package for testability
+-------------------------------------------------------------------------------------------------
+
+Rather than putting the entirety of a script's code in the script module itself, which resides in :file:`bin.src`, we should encourage developers to put the entirely of a function's code in the main package.
+Then the script imports that main entrypoint:
+
+.. code-block:: py
+
+   #!/usr/bin/env python
+   from lsst.some.package.scripts.a import main
+
+   if __name__ == '__main__':
+       main()
+
+The ``main`` function is then responsible for parsing command-line arguments and running the business logic, though ideally ``main`` itself is factored such that the core logic is performed in functions that are independent of the command-line context.
+With this architecture, the script's internal logic can be tested using the existing unit testing infrastructure (`unittest` tests run by pytest_ though SCons).
+This architecture is already effectively used by command-line tasks.
+Their executable command-line scripts look like this:
+
+.. code-block:: py
+
+    #!/usr/bin/env python
+   from lsst.pipe.tasks.processCcd import ProcessCcdTask
+
+   ProcessCcdTask.parseAndRun()
+
+The interaction of command-line arguments with script flow can even be tested within `unittest`-based tests by mocking the output of `argparse.ArgumentParser.parse_args`.
+Interactions with other types of external resources can also be mocked.
+
+In summary, by re-structuring scripts we can provide comprehensive unit tests for those scripts without having to treat scripts as a special case for testing.
+
+Action: scripts are documented in package documentation
+-------------------------------------------------------
+
+Similar to how every function has a page in the Python API reference, and every task as a corresponding `Task topic page <Task topic type>`_, every script or command-line executable must have a corresponding documentation page.
+The structure of this page should be designed and templated as a `topic type`_.
+These documentation pages should be listed both on the package's homepage, and in a central index accessible from the https://pipelines.lsst.io homepage (to be specific) that gathers executables from all packages.
+The script topic will use Sphinx extensions to auto-populate documentation from the script's code (see the :ref:`next action <adopt-argparse>`).
+
+The script topic should also provide a way to add metadata about a script, such as a description or tags, to facilitate a useful index of scripts.
+
+.. _adopt-argparse:
+
+Action: adopt argparse for command-line scripts to enable auto-documentation
+----------------------------------------------------------------------------
+
+To facilitate automatic documentation of command-line interfaces, scripts should use standard frameworks for continuing their interface rather than working directly with arguments using `sys.argv`.
+For example, the `sphinx-argparse`_ Sphinx extension can automatically document a command-line interface based on the `argparse.ArgumentParser` configuration for a script.
+Since `argparse is already adopted <https://developer.lsst.io/python/style.html#the-argparse-module-should-be-used-for-command-line-scripts>`_ by the DM Style Guide, this recommendation should be non-controversial.
+Nevertheless, some simple scripts have been written to avoid `argparse`, and those scripts should be ported to `argparse` to facilitate documentation.
+
+To work with `sphinx-argparse`_, scripts need to be written such that the `argparse.ArgumentParser` is returned by a function that takes no arguments:
+
+.. code-block:: py
+
+   def main():
+       parser = parse_args()
+       # ...
+
+
+   def parse_args():
+       parser = argparse.ArgumentParser(description='Documentation for the script')
+       parser.add_argument('--verbose', default=False, help='Enable verbose output)
+       return parser
+
+Such a requirement will need to be added to the `DM Python Style Guide`_.
+
 References
 ==========
 
@@ -159,6 +258,12 @@ References
 .. _plotSkyMap.py: https://github.com/lsst/skymap/blob/master/examples/plotSkyMap.py
 .. _runRepair.py: https://github.com/lsst/pipe_tasks/blob/master/examples/runRepair.py
 .. _run_ci_dataset.sh: https://github.com/lsst/ap_verify/blob/master/bin/run_ci_dataset.sh
+.. _pytest: https://pytest.readthedocs.io/en/latest/
+.. _shebangtron: https://github.com/lsst/shebangtron
+.. _Task topic type: https://developer.lsst.io/stack/task-topic-type.html
+.. _topic type: https://developer.lsst.io/stack/package-documentation-topic-types.html
+.. _sphinx-argparse: http://sphinx-argparse.readthedocs.io/en/latest/ 
+.. _DM Python Style Guide: https://developer.lsst.io/python/style.html
 
 .. |13| replace:: :ref:`QAWG-REC-13 <qawg-rec-13>`
 .. |14| replace:: :ref:`QAWG-REC-14 <qawg-rec-14>`
