@@ -239,6 +239,96 @@ To work with `sphinx-argparse`_, scripts need to be written such that the `argpa
 
 Such a requirement will need to be added to the `DM Python Style Guide`_.
 
+.. _examples-review:
+
+Survey of examples and tutorials in LSST documentation
+======================================================
+
+In the second part of this technote, we consider example and tutorial code that appears in documentation, and attempt to provide a road map for fulfilling |13| and |15|.
+As with the first part, concerning utility scripts, we first review the current landscape of example code, and in later sections identify technologies and actionable steps towards meeting |13| and |14|.
+
+.. _review-examples-in-examples:
+
+Examples in examples/ directories
+---------------------------------
+
+The |examples| directory does, in fact, contain example code (though see also :ref:`general-purpose-scripts-in-examples`).
+Examples exist in many forms: C++ source and header files (``.cc`` and ``.h``), Python modules, and Jupyter notebooks.
+
+In the most successful cases, the Python and C++ files are referenced from documentation text.
+Originally, documentation was written in Doxygen and the ``.dox`` files and docstrings included the contents of files from |examples|.
+For example, the `measAlgTasks.py`_ example is referenced from the docstring of the SourceDetectionTask_.
+Newer documentation being written in reStructuredText is merely linking to the GitHub blob URLs of files in |examples| because the multi-package build prevents |examples| from being available at a fixed relative URL during the build process.[#examples-sphinx-build]_
+
+.. [#examples-sphinx-build] See the `Overview of the pipelines.lsst.io build system <https://documenteer.lsst.io/pipelines/build-overview.html>`_ in Documenteer's documentation.
+
+Many of the Python examples, and generally all of the C++ examples, are structured as executables.
+In the case of the Python examples, the command-line interface provides a toggle for activating the debug framework or to optionally open a display (see `measAlgTasks.py`_).
+Thus these examples are distinct from :ref:`ad hoc scripts that are also found in the examples directory <general-purpose-scripts-in-examples>`.
+
+Not all examples are referenced from the documentation, though.
+For example, the `statisticsMaskedImage.py`_ module in the ``afw`` |examples| directory is not referenced in any documentation, despite seeming to be genuine example.
+
+.. _review-tests-in-examples:
+
+Test programs in examples/ directories
+--------------------------------------
+
+In addition to examples that are associated with documentation, some files in |examples| directories (typically C++) are neither :ref:`true examples <review-examples-in-examples>` nor :ref:`ad hoc utilities <review-tests-in-examples>`.
+These files seem to be tests of an ad hoc nature.
+Examples of this are the `ticket647.cc`_ and `maskIo2.cc`_ programs in ``afw``.
+The former appears to reference a ticket from the deprecated Trac system, and `maskIo2.cc`_ seems to test memory management in C++ code.
+
+Part of the issue here is that DM doesn't write unit tests in C++.
+Instead, all unit tests are written in Python, though those tests may exercise C++ code through Pybind11 bindings.
+
+.. _review-data-in-examples:
+
+Data files in examples/ directories
+-----------------------------------
+
+In rare cases, data files are located in the |examples| directories of packages.
+One such file is NewSuprimeCam.paf_ in ``afw``, which has no references anywhere in the ``afw`` codebase.
+
+.. _review-doctests:
+
+Python doctests
+---------------
+
+Another category of example code that commonly found in Python are doctests_, which are built into Python as the `doctest` package.
+doctests_ are formatted like interactive Python sessions, and show both the input that a user might enter at a Python prompt, along with the expected output.
+For example:
+
+>>> a = [1, 2, 3]
+>>> a.append(4)
+>>> a
+[1, 2, 3, 4]
+
+doctests_ can be found in docstrings (particularly the `Examples section <https://developer.lsst.io/python/numpydoc.html#py-docstring-examples>`__ of a Numpydoc-formatted Python docstring), as well as reStructuredText files.
+Because docstrings show both inputs and inputs, they work well as testable examples because test harnesses can run the example and verify that the output matches the expected output.
+
+.. _review-rst-examples:
+
+Untested Python and shell samples in reStructuredText
+-----------------------------------------------------
+
+Besides doctests_, code samples can also be added to documentation with reStructuredText directives such as ``code-block``, ``literalinclude``, and ``prompt``.
+For example, the `Getting Started`_ tutorial series in the Pipelines documentation uses ``code-block`` directives to include both shell commands and their output, along with Python scripts.
+
+.. _review-jupyter-notebooks:
+
+Jupyter notebooks
+-----------------
+
+`Jupyter Notebooks`_, like doctests_, are well suited for creating testable documentation because of how they mix prose, code, and output cells.
+`Jupyter Notebooks`_ are particularly notable for the immediacy and interactivity of their writing process.
+
+Finally, LSST uses `Jupyter Notebooks`_ in a number of contexts, including as documentation.
+As :ref:`mentioned before <review-examples-in-examples>`, Jupyter Notebooks appear in the |examples| directories of packages.
+Entire Git repositories are also dedicated to collecting Jupyter Notebooks.
+For example, the `notebook-demo`_ repository contains demo notebooks for LSST's Nublado platform.
+At the moment Notebooks aren't part of Sphinx documentation builds.
+
 References
 ==========
 
@@ -264,7 +354,19 @@ References
 .. _topic type: https://developer.lsst.io/stack/package-documentation-topic-types.html
 .. _sphinx-argparse: http://sphinx-argparse.readthedocs.io/en/latest/ 
 .. _DM Python Style Guide: https://developer.lsst.io/python/style.html
+.. _measAlgTasks.py: https://github.com/lsst/meas_algorithms/blob/master/examples/measAlgTasks.py
+.. _SourceDetectionTask: https://github.com/lsst/meas_algorithms/blob/ab9750a333ea586c47a619fd46eaf45e9985dcec/python/lsst/meas/algorithms/detection.py
+.. _statisticsMaskedImage.py: https://github.com/lsst/afw/blob/master/examples/statisticsMaskedImage.py
+.. _ticket647.cc: https://github.com/lsst/afw/blob/master/examples/ticket647.cc
+.. _maskIo2.cc: https://github.com/lsst/afw/blob/master/examples/maskIo2.cc
+.. _NewSuprimeCam.paf: https://github.com/lsst/afw/blob/7c9aa26c256174da0e9beb77f5fd941289262869/examples/NewSuprimeCam.paf
+.. _doctest:
+.. _doctests: https://docs.python.org/3/library/doctest.html
+.. _Getting Started: https://pipelines.lsst.io/getting-started/index.html
+.. _Jupyter Notebooks: https://jupyter-notebook.readthedocs.io/en/latest/
+.. _notebook-demo: https://github.com/lsst-sqre/notebook-demo
 
 .. |13| replace:: :ref:`QAWG-REC-13 <qawg-rec-13>`
 .. |14| replace:: :ref:`QAWG-REC-14 <qawg-rec-14>`
 .. |15| replace:: :ref:`QAWG-REC-15 <qawg-rec-15>`
+.. |examples| replace:: :file:`examples`
