@@ -329,6 +329,148 @@ Entire Git repositories are also dedicated to collecting Jupyter Notebooks.
 For example, the `notebook-demo`_ repository contains demo notebooks for LSST's Nublado platform.
 At the moment Notebooks aren't part of Sphinx documentation builds.
 
+.. _examples-consolidation:
+
+Consolidation of approaches to examples
+=======================================
+
+In the :ref:`previous section <examples-review>` we reviewed the various types of examples that exist in LSST codebases.
+Given the number of formats that examples can currently be found in, it's beneficial to consolidate our usage to a defined set of technologies and methodologies that are both convenient to integrate into documentation (addressing |13|) and test (addressing |15|).
+The QAWG recommended that one technology should be adopted:
+
+    There are various technologies which could be adopted to address this goal.\ [#wg-techs]_
+    The WG suggests that standardizing upon a single technology is essential, but takes no position as to which technology is most appropriate.
+
+    .. [#wg-techs] For example, Jupyter notebooks or Sphinx doctests.
+
+Although adopting a single technology is appealing, such a limitation may prove inappropriate for the types of documentation that LSST writes, and the types of things that are documented.
+The approach that we will pursue in this technote is to address the specific scenarios where examples are written for LSST documentation, and to associate a specific approach with that scenario.
+This way, even though we support multiple technologies, only one is permitted for each documentation scenario.
+We believe that most scenarios of writing examples in documentation can be covered with two technologies: Python doctests and Jupyter Notebooks.
+C++ examples remain a special case, and will be supported by a third approach.
+The following sections review these adopted technologies and the scenarios that they support.
+
+Doctests
+--------
+
+Doctests are standard in Python, have have robust support in both Sphinx_ (the tool that generates our documentation websites) and in pytest_ (the tool that runs our Python unit tests).
+The Astropy_ project is an excellent example of doctest-based documentation.
+By using doctests, the Astropy project provides ample examples of their APIs, and these examples are tested automatically as part of their continuous integration process.
+
+Doctests excel in their integration with existing software and documentation development practices.
+Doctests are convenient to add to docstrings of Python functions, classes, and methods.
+Doctests are also convenient to add to reStructuredText files, which is where the bulk of LSST's user and conceptual documentation is already written.
+For example, each task already has a `task topic`_ page written in reStructuredText.
+Doctests demonstrating that task as a Python API can be added directory into that reStructuredText file.
+Being plain text, doctests are convenient to review as part of a pull request.
+
+Compared to Jupyter Notebooks, doctests are slightly less convenient to write.
+Instead of the writing and execution environment being combined, developers may choose to write Python statements in a scratch Jupyter Notebook or IPython shell and copy the source and output into a doctest.
+Testing the doctest also requires running a command.
+However, given the success and abundant use of doctests in projects ranging from the Python documentation to Astropy_, it would appear that workflow issues are not significant.
+
+We recommend that doctests be adopted for docstrings and for how-to documentation written in reStructuredText where it is important for the example to integrate seamlessly with prose.
+
+Jupyter Noteboooks
+------------------
+
+Jupyter Notebooks are the second technology that would be good to consolidate towards.
+In many ways, Jupyter Notebooks have similar attributes to doctests in that they combine prose, source code, and outputs.
+Compared to doctests, notebooks add a few additional capabilities: support for running shell commands, and integration as a development and execution environment for both writers and readers.
+Given the adoption of Jupyter notebooks by the LSST Science Platform, it's also obvious that notebooks cannot be ignored as a platform for creating examples.
+
+Notebooks do have some disadvantages compared to doctests that prevent us from adopting them as the dominant technology for all examples.
+First, their JSON format is difficult to integrate into Pull Request workflows where merge conflicts can be expected.
+Similarly, notebooks require a working Jupyter server to view and edit, as opposed to the minimalist requirements of doctests.
+As the LSST Science Platform becomes more mature, it will become easier to include Jupyter Notebooks in a development workflow.
+
+Second, notebooks are also difficult to integrate into Sphinx documentation.
+Markdown is the primary prose format for Jupyter Notebooks.
+Although it's possible to write in reStructuredText, it won't be rendered in the browser.
+This means that notebooks cannot take advantage of Sphinx's cross-referencing syntax.
+Nor can reStructuredText files use cross-reference syntax to link *to* a Jupyter Notebook.
+For this reason we suggest that's it's better to not deeply integrate Jupyter Notebooks within a Sphinx documentation page.
+Instead, Jupyter Notebooks ought to be standalone pages.
+
+In other words, Jupyter Notebooks work well for delivering *tutorials*.
+In `What nobody tells you about documentation`_, the author Daniele Procida describes four distinct types of documentation:
+
+Reference
+    A comprehensive description of the product.
+
+Explanations
+    Content that helps build understanding, background, and context.
+
+How-to guides
+    Specific recipes, often with steps, that describe how to accomplish a common task.
+
+Tutorials
+    A learning-oriented lesson.
+
+Doctests work well when integrated with reference documentation (examples in docstrings, for example), in how-to guides, and to a lesser extent in explanatory guides as well.
+That type of documentation is deeply integrated with reStructuredText and Sphinx.
+
+Jupyter notebooks on the other hand are excellent for tutorials because, as a lesson, they can stand apart from the main body of the documentation.
+Sphinx's features, such as custom syntax, are not generally needed for tutorials.
+The reader's ability to download the notebook itself and follow along and make experimental adjustments to the tutorial is hugely beneficial.
+Lastly, tutorials experience less churn during regular development than other types of documentation, which makes the notebook's requirement that it cannot be edited in a text editor more acceptable.
+Thus, we recommend Jupyter notebooks as an ideal medium for producing tutorials.
+
+Jupyter notebooks are also useful for other types of documentation that benefits from an integration with software.
+For example, technical notes could be written as Jupyter Notebooks.
+The nbreport_ platform is also build around the concept of using Jupyter notebooks to generate regular reports augmented with templated computations.
+
+C++ examples
+------------
+
+Together, doctests and Jupyter Notebooks cover scenarios for most of the examples that LSST might want to write.
+One scenario that isn't addressed, though, are C++ examples that are currently found in the |examples| directories of packages.
+Neither doctests nor Jupyter Notebooks support C++ code.
+
+For C++ examples, it may best to continue the existing pattern of placing source files in the |examples| directory, having scons run the compilation of those examples, and reference those examples from the documentation.
+Note that displaying files from the |examples| directory still needs to be accommodated in the Sphinx builds as mentioned in :ref:`review-examples-in-examples`.
+
+.. _summary-of-example-scenarios:
+
+Summary of documentation scenarios and technologies
+---------------------------------------------------
+
+In summary, these are technologies that DM should adopt to produce examples in, and the appropriate scenarios for each technology:
+
+Python doctests
+    - "Examples" sections of Python docstrings.
+    - Python API demos and how-tos integrated with reStructuredText/Sphinx documentation.
+    - Pure-Python tutorials written in reStructuredText/Sphinx.
+
+Jupyter Notebooks
+    - Standalone tutorials that are written that use Python and/or the shell that are associated with a Sphinx documentation site.
+    - nbreport_ :cite:`SQR-023` templates and instances.
+    - Technical notes written entirely as a Jupyter Notebook.
+
+Files in |examples|
+    - Examples written in C++ that are referenced from reStructuredText/Sphinx documentation.
+
+.. _examples-not-covered:
+
+Types of examples not directly covered by adopted technologies
+--------------------------------------------------------------
+
+Some scenarios are not well covered by the adopted technologies.
+These are:
+
+- UI-based tutorials
+- Project-building tutorials
+
+LSST will use UI-based tutorials in documentation of the Science Platform.
+There isn't a technology that combines the content of a UI-based tutorial with a machine-testable plan.
+In industry, UI-based tutorials are often periodically reviewed an updated by a QA or documentation team.
+It's conceivable that UI tutorials could be co-developed with a Selenium test script (or similar).
+Selenium is also commonly used in industry to generate screenshots for UI-based tutorials since it's often the *appearance* of the UI that changes most frequently.
+
+Project-building tutorials are a common format for developer tutorials where the reader is guided through building a project consisting of multiple source files that are incrementally built up.
+tut_ is a Sphinx extension that provides an approach to creating a project-based tutorial in Sphinx_.
+It works with a Git repository where each branch contains the code at each stage of the project.
+
 References
 ==========
 
@@ -350,6 +492,7 @@ References
 .. _run_ci_dataset.sh: https://github.com/lsst/ap_verify/blob/master/bin/run_ci_dataset.sh
 .. _pytest: https://pytest.readthedocs.io/en/latest/
 .. _shebangtron: https://github.com/lsst/shebangtron
+.. _task topic:
 .. _Task topic type: https://developer.lsst.io/stack/task-topic-type.html
 .. _topic type: https://developer.lsst.io/stack/package-documentation-topic-types.html
 .. _sphinx-argparse: http://sphinx-argparse.readthedocs.io/en/latest/ 
@@ -365,6 +508,11 @@ References
 .. _Getting Started: https://pipelines.lsst.io/getting-started/index.html
 .. _Jupyter Notebooks: https://jupyter-notebook.readthedocs.io/en/latest/
 .. _notebook-demo: https://github.com/lsst-sqre/notebook-demo
+.. _Astropy: http://docs.astropy.org/en/stable/
+.. _Sphinx: http://www.sphinx-doc.org/en/master/
+.. _nbreport: https://nbreport.lsst.io
+.. _tut: https://github.com/nyergler/tut
+.. _`What nobody tells you about documentation`: https://www.divio.com/blog/documentation/
 
 .. |13| replace:: :ref:`QAWG-REC-13 <qawg-rec-13>`
 .. |14| replace:: :ref:`QAWG-REC-14 <qawg-rec-14>`
