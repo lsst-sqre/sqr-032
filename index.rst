@@ -471,6 +471,158 @@ Project-building tutorials are a common format for developer tutorials where the
 tut_ is a Sphinx extension that provides an approach to creating a project-based tutorial in Sphinx_.
 It works with a Git repository where each branch contains the code at each stage of the project.
 
+.. _pytest-approaches:
+
+Approaches for integrating doctests with Stack testing
+======================================================
+
+Doctests are one of the adopted technologies for writing testable examples.
+This section considers the various approaches for running and validating doctests as part of either the general software testing process or the documentation build.
+In general, there are two types of approaches: run doctests through pytest with the software is being tested, or run doctests through Sphinx when the documentation is built.
+
+.. _doctest-pytest:
+
+Running doctests through pytest
+-------------------------------
+
+The main testing command for the Stack (of which the LSST Science Pipelines is part of) is :command:`scons test`.
+SCons, in turn, runs pytest_, which provides test discovery, execution, and reporting.
+Integrating doctests with pytest_, and thus :command:`scons test` is appealing because it would enable us to test doctests without changing developer workflows.
+
+Pytest `supports doctests`__ through a ``--doctest-modules`` command-line argument.
+In principle, pytest should discover all Python modules in the package and run their doctests, similarly to how it discovers test modules and executes them.
+
+.. __: https://docs.pytest.org/en/latest/doctest.html
+
+As a case study, the verify_ package uses doctests that are run by pytest using its ``--doctest-modules`` argument.
+Note that in order to for modules to be discovered, we had to specify the :file:`python`, :file:`tests`, and :file:`bin.src` directories where modules can be found in a standard LSST EUPS package.
+In the :file:`setup.cfg` file, pytest is configured as:
+
+.. code-block:: ini
+
+   [tool:pytest]
+       addopts = --flake8 --doctest-modules python bin.src tests
+       flake8-ignore = E133 E226 E228 N802 N803 N806 N812 N815 N816 W504
+
+The disadvantage of this approach is that the specification of ``python bin.src tests`` as default options through the :file:`setup.cfg` file prevents a developer from easily running pytest against a single test module.
+Additional work is needed to understand why pytest cannot automatically discover LSST's Python modules by default.
+
+In addition to Python modules, pytest can also gather and run doctests in reStructuredText files using the ``--doctest-glob`` argument.
+For example: ``--doctest-glob=doc/**/*.rst`` would test all reStructuredText files in a package's documentation.
+
+.. _pydoctestplus:
+
+Enhancing pytest with Astropy's pytest-doctestplus
+--------------------------------------------------
+
+Astropy created a extension for pytest called pytest-doctestplus_ that enhances pytest-based doctest testing.
+It's main features are:
+
+- Processing doctests in of reStructuredText files (which is now handled natively by Pytest).
+- Approximate floating point comparison.
+- Advanced doctest skipping control for modules
+- Integration with the pytest-remotedata_ plugin to enable skipping tests that require remote connections.
+
+The floating point comparison feature is useful for avoiding test failures because of small flointing point rounding differences between a doctest and an execution.
+It handles cases like this:
+
+.. code-block:: rst
+
+   >>> 1. / 3.  # doctest: +FLOAT_CMP
+   0.333333333333333311
+
+Such a directive is likely useful to enable by default.
+
+pytest-doctestplus_ allows developers to indicate that that any doctests associated with a Python class, function, method, or whole module should be skipped through a ``__doctest_skip__`` module-level variable.
+
+For example, to skip all doctests in the function ``get_http`` in a module:
+
+.. code-block:: python
+
+   __doctest_skip__ = ['get_http']
+
+It also supports wildcard matching of names:
+
+.. code-block:: python
+
+   __doctest_skip__ = ['HttpClient.http_*']
+
+An entire module can be skipped with a module-level wildcard:
+
+.. code-block:: python
+
+   __doctest_skip__ = ['*']
+
+pytest-doctestplus_ provides a similar module-level variable to configure doctests that should be skipped if an optional dependency is not present.
+
+Overall, pytest-doctestplus_ appears to be a useful extension of pytest's basic doctest capability, and should be part of our solution for test doctests.
+
+.. _sybil-pytest:
+
+Sybil
+-----
+
+An alternative to pytest_\ ’s ``--doctest-modules`` mode and pytest-doctestplus_ is Sybil_.
+Sybil_ provides additional features for testing Python examples in reStructuredText/Sphinx documentation.
+
+Features
+^^^^^^^^
+
+The main use case for Sybil over other systems is it’s configurable example parsers.
+Whereas pytest_ and pytest-doctestplus_ only check for traditional doctests, Sybil_ provides additional parsers to check examples written in other types of syntax, such as ``code-block`` directives.
+
+This flexibility is useful in cases where an author might write a function or class in a ``code-block`` directive, and then use a doctest to exercise that example class or function.
+The code from both the ``code-block`` and doctest are treated as part of the same namespace.
+
+In addition to the ``code-block`` parser, Sybil_ provides an API for additional additional parsers should we wish to provide examples in custom reStructuredText directives or in different languages or syntaxes.
+For example, Sybil_ could operate on bash scripts.
+Sybil_ could also validate YAML or JSON-format code blocks.
+
+Sybil also provides an ``invisible-code-block`` reStructuredText directive.
+This directive can be used to execute code within the namespace of the page’s tests without rendering content onto the page.
+Used judiciously, ``invisible-code-block`` could be useful for adding setup code and environment assertions to ensure that the examples are testable without adding distractions for readers.
+
+In addition, Sybil provides a flexible skipping mechanism.
+Using a ``skip`` reStructuredText comment, single examples or ranges of examples can be skipped.
+Examples can also be skipped based on a logical test (the ``invisible-code-block`` directives provide a place to write auxiliary code for these tests).
+
+Integration with pytest
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Sybil_ integrates with pytest_, among other Python test runners.
+To use Sybil_ with pytest_, we would add a :file:`conftest.py` file to the doc directories of packages (or any other documentation project).
+In this :file:`conftest.py` file we can configure features like the parsers mentioned mentioned in the previous section.
+
+By executing pytest_ from a package’s root directory, as SCons already does, pytest_ should automatically discover the :file:`doc/conftest.py` file and begin testing the doctests in the reStructuredText source.
+Thus Sybil can integrate well into DM’s existing pytest_\ -based testing system.
+
+Finally, as alluded to above, Sybil_ is pitched squarely at running doctests in reStructuredText files, not in docstrings within Python modules.
+Thus Sybil_ would need to be used in conjunction with pytest_ itself or pytest-doctestplus_ to test docstrings.
+
+.. _extdoctest:
+
+Testing doctests with sphinx.ext.doctest
+----------------------------------------
+
+Another method of testing doctests in documentation is as part of the Sphinx documentation build, rather as part of the unit testing with pytest_.
+sphinx.ext.doctest_, a Sphinx extension included with Sphinx, provides this capability.
+
+sphinx.ext.doctest_ provides three methods for writing doctests:
+
+1. Regular doctests that use the ``>>>`` syntax.
+2. A ``doctest`` directive that provides control over test groupings, what doctest directives are applied to process the doctest, and whether or not to hide the doctest in the build site.
+3. A ``testcode`` and ``testoutput`` directive pairing that allow writers to separate the block that displays the example code from the block that displays output.
+
+This third method is unique to sphinx.ext.doctest_.
+It gives authors the flexibility to separately introduce the input and output.
+On the other hand, readers are used to seeing code and output paired together (not only do doctests pair code and output, but Jupyter Notebooks as well).
+
+In addition to directives for writing the examples themselves, sphinx.ext.doctest_ also provides ``testsetup`` and ``testcleanup`` directives.
+The content of these directives is automatically hidden, and are automatically run before and after, respectively, the test groups that they are associated with.
+Similar to the ``invisible-code-block`` directive provided by Sybil_, the ``testsetup`` directive can both run preparatory code and also add variables to the namespace that can be used by the examples.
+
+Finally, sphinx.ext.doctest_ provides means for conditionally skipping tests of examples.
+
 References
 ==========
 
@@ -513,6 +665,10 @@ References
 .. _nbreport: https://nbreport.lsst.io
 .. _tut: https://github.com/nyergler/tut
 .. _`What nobody tells you about documentation`: https://www.divio.com/blog/documentation/
+.. _pytest-doctestplus: https://github.com/astropy/pytest-doctestplus
+.. _pytest-remotedata: https://github.com/astropy/pytest-remotedata
+.. _Sybil: https://sybil.readthedocs.io/en/latest/index.html
+.. _sphinx.ext.doctest: http://www.sphinx-doc.org/en/master/usage/extensions/doctest.html
 
 .. |13| replace:: :ref:`QAWG-REC-13 <qawg-rec-13>`
 .. |14| replace:: :ref:`QAWG-REC-14 <qawg-rec-14>`
