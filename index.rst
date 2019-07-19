@@ -623,6 +623,52 @@ Similar to the ``invisible-code-block`` directive provided by Sybil_, the ``test
 
 Finally, sphinx.ext.doctest_ provides means for conditionally skipping tests of examples.
 
+.. _testing-notebooks:
+
+Testing Jupyter Notebooks
+=========================
+
+.. _nbval-intro:
+
+nbval for testing notebooks with pytest
+---------------------------------------
+
+nbval_ enables pytest_ to run on Jupyter Notebooks.
+It determines whether the Jupyter Notebook, when re-executed, can reproduce the outputs stored in the notebook.
+In this way, nbval_ treats Jupyter Notebooks as sophisticated doctests.
+
+nbval_ provides different levels of control over how the output stored in the Jupyter Notebook is compared against output from executing the notebook in a test environment:
+
+1. All cells can be tested by running as :command:`pytest --nbval`.
+2. Only cells specially marked with a ``# NBVAL_CHECK_OUTPUT`` marker comment can be tested by running as :command:`pytest --nbval-lax``.
+3. Checking all cells, but only after “sanitizing” the reproduced and stored outputs to avoid testing outputs that are intrinsically semi-random.
+
+The ``--nbval-lax`` mode is a low buy-in means of testing notebooks by allowing authors to mark just those cells that are representative and known to be testable.
+Note that their is a companion comment, ``# NBVAL_IGNORE_OUTPUT`` that causes nbval_ to skip testing a cell.
+This is a useful escape valve for cells that are difficult or impossible to test.
+
+The sanitization approach is more technically involved.
+In this mode, we would provide an ini-format file with regular expressions and replacement strings.
+nbval_ runs these regular expressions over the outputs and replaces the matched strings with a simplified replacement string.
+
+nbval_ has additional advanced features that are useful.
+One is the ``# NBVAL_RAISES_EXCEPTION`` code comment that permits a cell to raise and exception, and directs nbval_ to test the traceback.
+
+Instead, of using Python code comments (which are user-visible), cells can also be annotated with Jupyter-native tags.
+
+Finally, nbval_ can be configured to skip certain output types, such as ``stderr`` or ``application/javascript``.
+
+nbval_ is known to be compatible with the xdist plugin for running tests in parallel.
+In this case, an entire notebook would be run together as a unit.
+
+It is know current known how to control which Jupyter kernel pytest_ or nbval_ runs notebooks with, or whether this is configurable.
+
+Overall, nbval_ is an excellent and comprehensive solution for ensuring that Jupyter Notebooks are reproducible.
+One caveat that must be recognized, though, is that nbval_ requires that notebooks be committed into documentation repositories with their outputs committed.
+This pattern runs counter to the practice of always stripping notebooks of outputs before committing them to a Git repository. 
+Committing outputs increases the probability of merge conflicts should multiple authors be working on the same notebook simultaneously in separate branches.
+This reinforces the notion that Jupyter Notebooks should only be used in special circumstances, such as tutorials, rather than as the primary format for all of LSST’s documentation and examples.
+
 References
 ==========
 
@@ -669,6 +715,7 @@ References
 .. _pytest-remotedata: https://github.com/astropy/pytest-remotedata
 .. _Sybil: https://sybil.readthedocs.io/en/latest/index.html
 .. _sphinx.ext.doctest: http://www.sphinx-doc.org/en/master/usage/extensions/doctest.html
+.. _nbval: https://github.com/computationalmodelling/nbval
 
 .. |13| replace:: :ref:`QAWG-REC-13 <qawg-rec-13>`
 .. |14| replace:: :ref:`QAWG-REC-14 <qawg-rec-14>`
