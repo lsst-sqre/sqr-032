@@ -669,6 +669,33 @@ This pattern runs counter to the practice of always stripping notebooks of outpu
 Committing outputs increases the probability of merge conflicts should multiple authors be working on the same notebook simultaneously in separate branches.
 This reinforces the notion that Jupyter Notebooks should only be used in special circumstances, such as tutorials, rather than as the primary format for all of LSST’s documentation and examples.
 
+.. _nbpages-for-testing:
+
+nbpages and nbconvert as a testing device
+-----------------------------------------
+
+The one potential drawback of the nbval_/pytest_ approach, described :ref:`above <nbval-intro>` is notebooks must be committed with their outputs.
+As discussed, committing outputs makes Git diffs more difficult to interpret and increases the difficulty associated with resolving merge conflicts.
+nbpages_, developed at the Space Telescope Science Institute, attempts to work around this issue by creating a notebook publishing workflow that rigorously uses notebooks committed to Git without outputs.
+
+Essentially, nbpages_ is a front-end to nbconvert_.
+nbpages_ runs nbconvert_ on each notebook in a repository, which executes the notebook programatically, and then converts the notebook into an output format such as HTML or reStructuredText.
+As such, nbpages_ provides smoke-test level testing of notebooks.
+
+Obviously, without having existing outputs, it is impossible for this method to discern whether the outputs are correct or not.
+However, simply running the notebook programatically protects against notebooks that outright do not run.
+
+.. _testing-notebooks-summary:
+
+Summary of notebook testing approaches
+--------------------------------------
+
+Overall, nbval_ is a comprehensive solution for testing Jupyter Notebooks intended for documentation, and integrates into our existing pytest_ workflow.
+An nbconvert_\ -based testing approach is not as compelling as actually validating the reproducibility of a notebook's outputs.
+Further, the fact that nbval_ relies on notebooks where the outputs are included can be seen as a feature since it means that a documentation site can be regenerated without having to re-run the notebook itself.
+This is a useful capability so that developer builds can run without a massive computational investment.
+In summary, we should adopt nbval_ for projects such as the `pipelines.lsst.io <https://pipelines.lsst.io>`_ and `nb.lsst.io <https://nb.lsst.io>`_ documentation projects.
+
 References
 ==========
 
@@ -716,6 +743,8 @@ References
 .. _Sybil: https://sybil.readthedocs.io/en/latest/index.html
 .. _sphinx.ext.doctest: http://www.sphinx-doc.org/en/master/usage/extensions/doctest.html
 .. _nbval: https://github.com/computationalmodelling/nbval
+.. _nbpages: https://github.com/eteq/nbpages
+.. _nbconvert: https://nbconvert.readthedocs.io/
 
 .. |13| replace:: :ref:`QAWG-REC-13 <qawg-rec-13>`
 .. |14| replace:: :ref:`QAWG-REC-14 <qawg-rec-14>`
