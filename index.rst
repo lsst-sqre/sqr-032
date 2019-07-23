@@ -606,17 +606,69 @@ Whereas pytest_ and pytest-doctestplus_ only check for traditional doctests, Syb
 This flexibility is useful in cases where an author might write a function or class in a ``code-block`` directive, and then use a doctest to exercise that example class or function.
 The code from both the ``code-block`` and doctest are treated as part of the same namespace.
 
-In addition to the ``code-block`` parser, Sybil_ provides an API for additional additional parsers should we wish to provide examples in custom reStructuredText directives or in different languages or syntaxes.
-For example, Sybil_ could operate on bash scripts.
-Sybil_ could also validate YAML or JSON-format code blocks.
+In addition to the ``code-block`` parser, Sybil_ provides an `API for additional additional parsers`__ should we wish to provide examples in custom reStructuredText directives or in different languages or syntaxes.
+For example, Sybil_ could operate on bash scripts or commands:
 
-Sybil also provides an ``invisible-code-block`` reStructuredText directive.
+.. code-block:: rst
+
+   .. code-block:: sh
+
+      $ echo Hello world
+      Hello world
+
+.. __: https://sybil.readthedocs.io/en/latest/parsers.html#developing-your-own-parsers
+
+Similarly, Sybil_ could also be extended to validate YAML or JSON-format code blocks.
+
+Sybil also provides an ``invisible-code-block`` reStructuredText directive:
+
+.. code-block:: rst
+
+   .. invisible-code-block:: python
+
+      import lsst.afw.table as afwTable
+
 This directive can be used to execute code within the namespace of the page’s tests without rendering content onto the page.
 Used judiciously, ``invisible-code-block`` could be useful for adding setup code and environment assertions to ensure that the examples are testable without adding distractions for readers.
 
 In addition, Sybil provides a flexible skipping mechanism.
 Using a ``skip`` reStructuredText comment, single examples or ranges of examples can be skipped.
+
+.. code-block:: rst
+
+   .. skip: next
+
+   >>> 1 / 0
+
+A range of examples can also be skipped:
+
+.. code-block:: rst
+
+   .. skip: start
+
+   >>> 1+1
+   2
+
+   Some text...
+
+   >>> 40+2
+   42
+
+   .. skip: end
+
 Examples can also be skipped based on a logical test (the ``invisible-code-block`` directives provide a place to write auxiliary code for these tests).
+
+.. code-block:: rst
+
+   .. invisible-code-block::
+
+      import os
+      is_travis = os.getenv('TRAVIS') == 'true'
+
+   .. skip: is_travis is False
+
+   >>> os.getenv('TRAVIS')
+   'true'
 
 Integration with pytest
 ^^^^^^^^^^^^^^^^^^^^^^^
