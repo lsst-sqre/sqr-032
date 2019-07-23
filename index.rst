@@ -523,7 +523,7 @@ It's main features are:
 - Advanced doctest skipping control for modules
 - Integration with the pytest-remotedata_ plugin to enable skipping tests that require remote connections.
 
-The floating point comparison feature is useful for avoiding test failures because of small flointing point rounding differences between a doctest and an execution.
+The floating point comparison feature is useful for avoiding test failures because of small floating point rounding differences between a doctest and an execution.
 It handles cases like this:
 
 .. code-block:: rst
@@ -554,6 +554,38 @@ An entire module can be skipped with a module-level wildcard:
    __doctest_skip__ = ['*']
 
 pytest-doctestplus_ provides a similar module-level variable to configure doctests that should be skipped if an optional dependency is not present.
+
+In the context of reStructuredText pages, and within docstrings, pytest-doctestplus_ also provides several directives [#doctestplus-directives]_ for skipping tests and creating invisible doctests for environmental set up.
+
+.. [#doctestplus-directives]
+
+   These reStructuredText directives are not actually part of pytest-doctestplus_.
+   In fact, they're shipped as part of the `sphinx-astropy`_ project as ``sphinx_astropy.ext.doctest``.
+   This means that adding pytest-doctestplus_ also requires adding sphinx-astropy_ as a dependency.
+
+The ``testsetup`` directive runs the code within the doctest, but does not display the code in the published documentation:
+
+.. code-block:: rst
+
+   .. testsetup::
+
+      import lsst.afw.table as afwTable
+
+``testsetup``, as the name implies, is useful for running setup code that would distract from the narrative of the page itself.
+
+The ``doctest-skip`` directive renders the doctest, but skips executing and therefore testing, the code:
+
+.. code-block:: rst
+
+   .. doctest-skip::
+
+      >>> 1 / 0
+
+Finally, there is also a special comment that ignores all doctests on a page
+
+.. code-block:: rst
+
+   .. doctest-skip-all
 
 Overall, pytest-doctestplus_ appears to be a useful extension of pytest's basic doctest capability, and should be part of our solution for test doctests.
 
@@ -745,6 +777,7 @@ References
 .. _nbval: https://github.com/computationalmodelling/nbval
 .. _nbpages: https://github.com/eteq/nbpages
 .. _nbconvert: https://nbconvert.readthedocs.io/
+.. _sphinx-astropy: https://github.com/astropy/sphinx-astropy
 
 .. |13| replace:: :ref:`QAWG-REC-13 <qawg-rec-13>`
 .. |14| replace:: :ref:`QAWG-REC-14 <qawg-rec-14>`
