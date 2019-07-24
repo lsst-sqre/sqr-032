@@ -6,7 +6,7 @@ Abstract
 ========
 
 Examples and tutorials are important elements of successful documentation.
-They show how something can be accomplished, rather than merely describing it.
+They show the reader how something can be accomplished, which is often more powerful and effective than a mere description.
 Such examples are only useful if they are correct, though.
 Automated testing infrastructure is the best way to ensure that examples are correct when they are committed, and remain correct as a project evolves.
 Recently, in :dmtn:`085` :cite:`DMTN-085`, the QA Strategy Working Group (QAWG)  issued specific recommendations to improve how examples are managed and tested in LSST's documentation.
@@ -38,13 +38,13 @@ QAWG-REC-15
     | The Project should prioritize the development of a documentation system which makes it convenient to include code examples and that tests those examples as part of a documentation build.
 
 Of these recommendations, the bulk of the work is associated with |15|.
-It is through |15| that we are mandated to specify the conventions and formats for committing examples and scripts into the LSST code base, and provide the infrastructure for displaying these examples and scripts in end-user documentation.
+It is through |15| that we are mandated to specify the conventions and formats for committing examples and scripts into the LSST codebase, and provide the infrastructure for displaying these examples and scripts in end-user documentation.
 It is also through |15| that we are mandated to provide infrastructure to test examples and scripts for correctness and reproducibility.
 We interpret |13| as requesting that examples and scripts be conveniently displayed and listed through end-user documentation, to solve the issue that examples and scripts are generally not discoverable of both our own developers and the user community.
 |13| can be accomplished in conjunction with |15|.
 
 Finally, |14| requests that we establish a policy for how example code is maintained.
-The issue is that examples can be broken when developers add or change APIs in the code base and it is not necessarily the responsibility of those authors to also update all examples and tutorials elsewhere in the LSST documentation and codebase.
+The issue is that examples can be broken when developers add or change APIs in the codebase and it is not necessarily the responsibility of those authors to also update all examples and tutorials elsewhere in the LSST documentation and codebase.
 The work done to fulfill |13| and |15|, by creating a systematic infrastructure for handling examples and scripts, can assist with this process by alerting developers when their code changes are affecting documentation.
 Beyond that, in |14| we must still provide a system for organizing the work associated with breakages in example code.
 
@@ -62,7 +62,7 @@ First, ad hoc scripts *are not* command-line tasks (soon to be overhauled with t
 These scripts are already documented using the `Task topic type`_ in LSST documentation.
 Such task scripts are consistently documented, and centrally indexed. [#taskindex]_
 
-.. [#taskindex] Tasks are listed in package documentation homepages and there are plans, described in :dmtn:`30` to list task by theme so that users can discover appropriate tasks without having to be familiar with the structure of the LSST code base.
+.. [#taskindex] Tasks are listed in package documentation homepages and there are plans, described in :dmtn:`30` to list task by theme so that users can discover appropriate tasks without having to be familiar with the structure of the LSST codebase.
 
 .. _scripts-in-binsrc:
 
@@ -73,6 +73,7 @@ Other scripts, outside the task framework, are also included in the :file:`bin.s
 We put Python scripts in :file:`bin.src` because they are processed by SCons at build time and installed into the user's ``$PATH`` so that they can be executed directly on the command line.
 For example, the verify_ package has three scripts in its :file:`bin.src` directory: dispatch_verify.py_, inspect_job.py_, and lint_metrics.py_.
 Some of these scripts use the standard `argparse` package to process command-line arguments (dispatch_verify.py_ and lint_metrics.py_), while others directly parse command line arguments in an ad hoc manner (`inspect_job.py`_).
+
 .. note that lint metrics does not its argparse parser in an importable place.
 
 .. _general-purpose-scripts-in-examples:
@@ -125,14 +126,12 @@ Such code needs to be re-engineered, including providing a proper command-line i
 Examples as scripts in examples/
 --------------------------------
 
-We also see many executable scripts in :file:`examples` directories that associated with documentation.
+We also see many executable scripts in :file:`examples` directories that are associated with documentation.
 An example is the runRepair.py_ script in the pipe_tasks_ package.
 That script is associated with a page in the Doxygen documentation.
-The reason it's a script is to be runnable: the script sets up a mock dataset, and then runs the ``lsst.pipe.tasks.repair.RepairTask`` on it.
+The reason it's a script is to be runnable: the script sets up a mock dataset and then runs the ``RepairTask`` task on it.
 This type of script fits the purpose of the original :file:`examples` framework, but there is a clear mandate from |15| to improve how these examples are created, managed, and tested.
-Didactic script will be considered later in this technote as part of the examples portion of the work.
-
-.. todo:: Add a link to that section.
+Didactic scripts will be considered :ref:`later in this technote <examples-review>` as part of the examples portion of the work.
 
 Scripts in languages other than Python
 --------------------------------------
@@ -145,8 +144,8 @@ Plan for consolidating and documenting scripts
 
 Based on the :ref:`review of existing ad hoc scripts <review-of-scripts>` in the LSST codebase, we can fulfill |13| (in relation to scripts) by introducing a systematic approach to including and documenting scripts in the LSST codebase.
 
-Action: move all scripts to bin.src/ or bin/
---------------------------------------------
+Action: move all utility scripts to bin.src/ or bin/
+----------------------------------------------------
 
 The first improvement we can realize is by ensuring that any executable script provided with an LSST package is shipped in its :file:`bin.src` or :file:`bin` directory. [#setuptoolsscripts]_
 
@@ -166,7 +165,7 @@ The first improvement we can realize is by ensuring that any executable script p
           }
       )
 
-   This has the same effect as putting modules in :file:`bin.src` in an LSST EUPS package.
+   This has the same effect as putting scripts in the :file:`bin.src` directory of an LSST EUPS package.
 
 This will have the effect of making it possible for users to execute scripts without having to address EUPS environment variables.
 Using the :file:`bin.src` directory specifically for Python-based scripts has the benefit of ensuring that the hash-bang is re-written properly to account for SIP security features in macOS.
@@ -175,7 +174,9 @@ Non-Python scripts can go directly in the :file:`bin` directory because shebangt
 Action: mandate that the core code from scripts should reside in the main package for testability
 -------------------------------------------------------------------------------------------------
 
-Rather than putting the entirety of a script's code in the script module itself, which resides in :file:`bin.src`, we should encourage developers to put the entirely of a function's code in the main package.
+Rather than putting the entirety of a script's code in the script module itself, which resides in :file:`bin.src`, we should encourage developers to put the entirely of a script's code in the main package.
+A useful pattern might be to create a standardized subpackage called ``scripts`` [#scripts-name]_ within any Stack package.
+Then inside the ``scripts`` subpackage, each "script" is a module that's named after the command line executable in the :file:`bin.src` directory.
 Then the script imports that main entrypoint:
 
 .. code-block:: py
@@ -201,13 +202,18 @@ Their executable command-line scripts look like this:
 The interaction of command-line arguments with script flow can even be tested within `unittest`-based tests by mocking the output of `argparse.ArgumentParser.parse_args`.
 Interactions with other types of external resources can also be mocked.
 
-In summary, by re-structuring scripts we can provide comprehensive unit tests for those scripts without having to treat scripts as a special case for testing.
+In summary, by restructuring scripts we can provide comprehensive unit tests for those scripts without having to treat scripts as a special case for testing.
+
+.. [#scripts-name]
+
+   An alternative choice to ``scripts`` would be ``bin``.
+   The ``lsst.verify`` package has a subpackage called ``bin``.
 
 Action: scripts are documented in package documentation
 -------------------------------------------------------
 
-Similar to how every function has a page in the Python API reference, and every task as a corresponding `Task topic page <Task topic type>`_, every script or command-line executable must have a corresponding documentation page.
-The structure of this page should be designed and templated as a `topic type`_.
+Similar to how every function has a page in the Python API reference, and every task has a corresponding `Task topic page <Task topic type>`_, every script or command-line executable must have a corresponding documentation page.
+The structure of this page should be designed and templated equivalently to a `topic type`_.
 These documentation pages should be listed both on the package's homepage, and in a central index accessible from the https://pipelines.lsst.io homepage (to be specific) that gathers executables from all packages.
 The script topic will use Sphinx extensions to auto-populate documentation from the script's code (see the :ref:`next action <adopt-argparse>`).
 
@@ -218,7 +224,7 @@ The script topic should also provide a way to add metadata about a script, such 
 Action: adopt argparse for command-line scripts to enable auto-documentation
 ----------------------------------------------------------------------------
 
-To facilitate automatic documentation of command-line interfaces, scripts should use standard frameworks for continuing their interface rather than working directly with arguments using `sys.argv`.
+To facilitate automatic documentation of command-line interfaces, scripts should use standard frameworks for establishing their interface rather than directly parsing `sys.argv`.
 For example, the `sphinx-argparse`_ Sphinx extension can automatically document a command-line interface based on the `argparse.ArgumentParser` configuration for a script.
 Since `argparse is already adopted <https://developer.lsst.io/python/style.html#the-argparse-module-should-be-used-for-command-line-scripts>`_ by the DM Style Guide, this recommendation should be non-controversial.
 Nevertheless, some simple scripts have been written to avoid `argparse`, and those scripts should be ported to `argparse` to facilitate documentation.
@@ -256,18 +262,20 @@ The |examples| directory does, in fact, contain example code (though see also :r
 Examples exist in many forms: C++ source and header files (``.cc`` and ``.h``), Python modules, and Jupyter notebooks.
 
 In the most successful cases, the Python and C++ files are referenced from documentation text.
-Originally, documentation was written in Doxygen and the ``.dox`` files and docstrings included the contents of files from |examples|.
+Originally, LSST Science Pipelines documentation was written in Doxygen and the ``.dox`` files and docstrings included the contents of files from |examples|.
 For example, the `measAlgTasks.py`_ example is referenced from the docstring of the SourceDetectionTask_.
-Newer documentation being written in reStructuredText is merely linking to the GitHub blob URLs of files in |examples| because the multi-package build prevents |examples| from being available at a fixed relative URL during the build process.[#examples-sphinx-build]_
+Newer documentation being written in reStructuredText is merely linking to the GitHub blob URLs of files in |examples| because the multi-package build prevents |examples| from being available at a fixed relative URL during the build process.\ [#examples-sphinx-build]_
 
-.. [#examples-sphinx-build] See the `Overview of the pipelines.lsst.io build system <https://documenteer.lsst.io/pipelines/build-overview.html>`_ in Documenteer's documentation.
+.. [#examples-sphinx-build]
+
+   See the `Overview of the pipelines.lsst.io build system <https://documenteer.lsst.io/pipelines/build-overview.html>`_ in Documenteer's documentation.
 
 Many of the Python examples, and generally all of the C++ examples, are structured as executables.
 In the case of the Python examples, the command-line interface provides a toggle for activating the debug framework or to optionally open a display (see `measAlgTasks.py`_).
 Thus these examples are distinct from :ref:`ad hoc scripts that are also found in the examples directory <general-purpose-scripts-in-examples>`.
 
 Not all examples are referenced from the documentation, though.
-For example, the `statisticsMaskedImage.py`_ module in the ``afw`` |examples| directory is not referenced in any documentation, despite seeming to be genuine example.
+For example, the `statisticsMaskedImage.py`_ module in the |examples| directory of ``afw`` is not referenced in any documentation, despite seeming to be genuine example.
 
 .. _review-tests-in-examples:
 
@@ -295,7 +303,7 @@ One such file is NewSuprimeCam.paf_ in ``afw``, which has no references anywhere
 Python doctests
 ---------------
 
-Another category of example code that commonly found in Python are doctests_, which are built into Python as the `doctest` package.
+Another category of example code that is commonly found in Python are doctests_, which are supported by Python itself through the `doctest` standard library package.
 doctests_ are formatted like interactive Python sessions, and show both the input that a user might enter at a Python prompt, along with the expected output.
 For example:
 
@@ -304,7 +312,7 @@ For example:
 >>> a
 [1, 2, 3, 4]
 
-doctests_ can be found in docstrings (particularly the `Examples section <https://developer.lsst.io/python/numpydoc.html#py-docstring-examples>`__ of a Numpydoc-formatted Python docstring), as well as reStructuredText files.
+doctests_ can be found in docstrings (particularly the `Examples section <https://developer.lsst.io/python/numpydoc.html#py-docstring-examples>`__ of a Numpydoc-formatted Python docstring), as well as in reStructuredText files.
 Because docstrings show both inputs and inputs, they work well as testable examples because test harnesses can run the example and verify that the output matches the expected output.
 
 .. _review-rst-examples:
@@ -323,18 +331,18 @@ Jupyter notebooks
 `Jupyter Notebooks`_, like doctests_, are well suited for creating testable documentation because of how they mix prose, code, and output cells.
 `Jupyter Notebooks`_ are particularly notable for the immediacy and interactivity of their writing process.
 
-Finally, LSST uses `Jupyter Notebooks`_ in a number of contexts, including as documentation.
+LSST uses `Jupyter Notebooks`_ in a number of contexts, including as documentation.
 As :ref:`mentioned before <review-examples-in-examples>`, Jupyter Notebooks appear in the |examples| directories of packages.
 Entire Git repositories are also dedicated to collecting Jupyter Notebooks.
 For example, the `notebook-demo`_ repository contains demo notebooks for LSST's Nublado platform.
-At the moment Notebooks aren't part of Sphinx documentation builds.
+At the moment, Notebooks aren't part of Sphinx documentation builds.
 
 .. _examples-consolidation:
 
 Consolidation of approaches to examples
 =======================================
 
-In the :ref:`previous section <examples-review>` we reviewed the various types of examples that exist in LSST codebases.
+In the :ref:`previous section <examples-review>`, we reviewed the various types of examples that exist in LSST codebases.
 Given the number of formats that examples can currently be found in, it's beneficial to consolidate our usage to a defined set of technologies and methodologies that are both convenient to integrate into documentation (addressing |13|) and test (addressing |15|).
 The QAWG recommended that one technology should be adopted:
 
@@ -354,7 +362,7 @@ Doctests
 --------
 
 Doctests are standard in Python, have have robust support in both Sphinx_ (the tool that generates our documentation websites) and in pytest_ (the tool that runs our Python unit tests).
-The Astropy_ project is an excellent example of doctest-based documentation.
+The Astropy_ project is an excellent example of doctest-driven documentation.
 By using doctests, the Astropy project provides ample examples of their APIs, and these examples are tested automatically as part of their continuous integration process.
 
 Doctests excel in their integration with existing software and documentation development practices.
@@ -369,7 +377,7 @@ Instead of the writing and execution environment being combined, developers may 
 Testing the doctest also requires running a command.
 However, given the success and abundant use of doctests in projects ranging from the Python documentation to Astropy_, it would appear that workflow issues are not significant.
 
-We recommend that doctests be adopted for docstrings and for how-to documentation written in reStructuredText where it is important for the example to integrate seamlessly with prose.
+We recommend that doctests be adopted for docstrings and for how-to documentation written in reStructuredText where it is important for the example to integrate seamlessly with the existing documentation.
 
 Jupyter Noteboooks
 ------------------
@@ -389,7 +397,7 @@ Markdown is the primary prose format for Jupyter Notebooks.
 Although it's possible to write in reStructuredText, it won't be rendered in the browser.
 This means that notebooks cannot take advantage of Sphinx's cross-referencing syntax.
 Nor can reStructuredText files use cross-reference syntax to link *to* a Jupyter Notebook.
-For this reason we suggest that's it's better to not deeply integrate Jupyter Notebooks within a Sphinx documentation page.
+For this reason we suggest that it's better to not deeply integrate Jupyter Notebooks within a Sphinx documentation page.
 Instead, Jupyter Notebooks ought to be standalone pages.
 
 In other words, Jupyter Notebooks work well for delivering *tutorials*.
@@ -417,8 +425,8 @@ Lastly, tutorials experience less churn during regular development than other ty
 Thus, we recommend Jupyter notebooks as an ideal medium for producing tutorials.
 
 Jupyter notebooks are also useful for other types of documentation that benefits from an integration with software.
-For example, technical notes could be written as Jupyter Notebooks.
-The nbreport_ platform is also build around the concept of using Jupyter notebooks to generate regular reports augmented with templated computations.
+For example, technical notes could be written as Jupyter notebooks.
+The nbreport_ platform is also built around the concept of using Jupyter notebooks to generate regular reports augmented with templated computations.
 
 C++ examples
 ------------
@@ -427,7 +435,7 @@ Together, doctests and Jupyter Notebooks cover scenarios for most of the example
 One scenario that isn't addressed, though, are C++ examples that are currently found in the |examples| directories of packages.
 Neither doctests nor Jupyter Notebooks support C++ code.
 
-For C++ examples, it may best to continue the existing pattern of placing source files in the |examples| directory, having scons run the compilation of those examples, and reference those examples from the documentation.
+For C++ examples, it may best to continue the existing pattern of placing source files in the |examples| directory, having scons run the compilation of those examples, and referencing those examples from the documentation.
 Note that displaying files from the |examples| directory still needs to be accommodated in the Sphinx builds as mentioned in :ref:`review-examples-in-examples`.
 
 .. _summary-of-example-scenarios:
@@ -443,7 +451,7 @@ Python doctests
     - Pure-Python tutorials written in reStructuredText/Sphinx.
 
 Jupyter Notebooks
-    - Standalone tutorials that are written that use Python and/or the shell that are associated with a Sphinx documentation site.
+    - Standalone tutorials that use Python and/or the shell, which are associated with a Sphinx documentation site.
     - nbreport_ :cite:`SQR-023` templates and instances.
     - Technical notes written entirely as a Jupyter Notebook.
 
@@ -463,7 +471,7 @@ These are:
 
 LSST will use UI-based tutorials in documentation of the Science Platform.
 There isn't a technology that combines the content of a UI-based tutorial with a machine-testable plan.
-In industry, UI-based tutorials are often periodically reviewed an updated by a QA or documentation team.
+In industry, UI-based tutorials are often periodically reviewed and updated by a QA or documentation team.
 It's conceivable that UI tutorials could be co-developed with a Selenium test script (or similar).
 Selenium is also commonly used in industry to generate screenshots for UI-based tutorials since it's often the *appearance* of the UI that changes most frequently.
 
@@ -476,9 +484,9 @@ It works with a Git repository where each branch contains the code at each stage
 Approaches for integrating doctests with Stack testing
 ======================================================
 
-Doctests are one of the adopted technologies for writing testable examples.
+Doctests are one of our adopted technologies for writing testable examples.
 This section considers the various approaches for running and validating doctests as part of either the general software testing process or the documentation build.
-In general, there are two types of approaches: run doctests through pytest with the software is being tested, or run doctests through Sphinx when the documentation is built.
+In general, there are two types of approaches: run doctests through pytest while the software is being tested, or run doctests through Sphinx when the documentation is built.
 
 .. _doctest-pytest:
 
@@ -495,7 +503,7 @@ In principle, pytest should discover all Python modules in the package and run t
 .. __: https://docs.pytest.org/en/latest/doctest.html
 
 As a case study, the verify_ package uses doctests that are run by pytest using its ``--doctest-modules`` argument.
-Note that in order to for modules to be discovered, we had to specify the :file:`python`, :file:`tests`, and :file:`bin.src` directories where modules can be found in a standard LSST EUPS package.
+Note that in order for modules to be discovered, we had to specify the :file:`python`, :file:`tests`, and :file:`bin.src` directories where modules can be found in a standard LSST EUPS package.
 In the :file:`setup.cfg` file, pytest is configured as:
 
 .. code-block:: ini
@@ -516,11 +524,11 @@ Enhancing pytest with Astropy's pytest-doctestplus
 --------------------------------------------------
 
 Astropy created a extension for pytest called pytest-doctestplus_ that enhances pytest-based doctest testing.
-It's main features are:
+Its main features are:
 
-- Processing doctests in of reStructuredText files (which is now handled natively by Pytest).
+- Processing doctests in reStructuredText files (which is now handled natively by Pytest).
 - Approximate floating point comparison.
-- Advanced doctest skipping control for modules
+- Advanced doctest skipping control for modules.
 - Integration with the pytest-remotedata_ plugin to enable skipping tests that require remote connections.
 
 The floating point comparison feature is useful for avoiding test failures because of small floating point rounding differences between a doctest and an execution.
@@ -533,7 +541,7 @@ It handles cases like this:
 
 Such a directive is likely useful to enable by default.
 
-pytest-doctestplus_ allows developers to indicate that that any doctests associated with a Python class, function, method, or whole module should be skipped through a ``__doctest_skip__`` module-level variable.
+pytest-doctestplus_ allows developers to indicate that any doctests associated with a Python class, function, method, or whole module should be skipped through a ``__doctest_skip__`` module-level variable.
 
 For example, to skip all doctests in the function ``get_http`` in a module:
 
@@ -581,13 +589,13 @@ The ``doctest-skip`` directive renders the doctest, but skips executing and ther
 
       >>> 1 / 0
 
-Finally, there is also a special comment that ignores all doctests on a page
+Finally, there is also a special comment that ignores all doctests on a page:
 
 .. code-block:: rst
 
    .. doctest-skip-all
 
-Overall, pytest-doctestplus_ appears to be a useful extension of pytest's basic doctest capability, and should be part of our solution for test doctests.
+Overall, pytest-doctestplus_ appears to be a useful extension of pytest's basic doctest capability, and should be part of our solution for testing doctests.
 
 .. _sybil-pytest:
 
@@ -600,13 +608,13 @@ Sybil_ provides additional features for testing Python examples in reStructuredT
 Features
 ^^^^^^^^
 
-The main use case for Sybil over other systems is it’s configurable example parsers.
+The main use case for Sybil over other systems is being able to build custom example parsers.
 Whereas pytest_ and pytest-doctestplus_ only check for traditional doctests, Sybil_ provides additional parsers to check examples written in other types of syntax, such as ``code-block`` directives.
 
 This flexibility is useful in cases where an author might write a function or class in a ``code-block`` directive, and then use a doctest to exercise that example class or function.
 The code from both the ``code-block`` and doctest are treated as part of the same namespace.
 
-In addition to the ``code-block`` parser, Sybil_ provides an `API for additional additional parsers`__ should we wish to provide examples in custom reStructuredText directives or in different languages or syntaxes.
+In addition to the ``code-block`` parser, Sybil_ provides an `API for additional parsers`__ should we wish to provide examples in custom reStructuredText directives or in different languages or syntaxes.
 For example, Sybil_ could operate on bash scripts or commands:
 
 .. code-block:: rst
@@ -688,7 +696,7 @@ Thus Sybil_ would need to be used in conjunction with pytest_ itself or pytest-d
 Testing doctests with sphinx.ext.doctest
 ----------------------------------------
 
-Another method of testing doctests in documentation is as part of the Sphinx documentation build, rather as part of the unit testing with pytest_.
+Another method of testing doctests in documentation is as part of the Sphinx documentation build, rather than as part of the unit testing with pytest_.
 sphinx.ext.doctest_, a Sphinx extension included with Sphinx, provides this capability.
 
 sphinx.ext.doctest_ provides three methods for writing doctests:
@@ -714,8 +722,8 @@ Summary of doctest testing approaches
 
 There are several approaches to validating doctest-based examples that differ based on how they are run, where they run, and what features they add beyond the basic doctest library.
 
-Of the options listed, we immediately dismiss the strickly pytest-driven approach as pytest-doctestplus_ provides an equivalent, but improved, feature set.
-We also dismiss sphinx.ext.doctest_ approach because it occurs during the documentation build, rather than during regular testing (driven by pytest).
+Of the options listed, we immediately dismiss the strictly pytest-driven approach as pytest-doctestplus_ provides an equivalent, but improved, feature set.
+We also dismiss the sphinx.ext.doctest_ approach because it occurs during the documentation build, rather than during regular testing (driven by pytest).
 We believe that documentation testing with pytest-based testing brings documentation integrity to the forefront of developer culture, and helps ensure that breakages of examples are more visible.
 This reasoning also weights heavily in our :ref:`chosen approach to testing Jupyter Notebooks <testing-notebooks-summary>`.
 
@@ -724,14 +732,14 @@ pytest-doctestplus_ is advantageous because it can be used for both doctest exam
 As such, pytest-doctestplus_ provides a uniform system for testing all doctests that developers write.
 
 On the other hand, Sybil_ only operates on reStructuredText pages.
-Compared to pytest-doctestplus_, though, Sybil_ has an extensible parsers system that can allow us to test examples in other languages, such as shell scripts or even HTTP calls.
+Compared to pytest-doctestplus_, though, Sybil_ has an extensible parsing system that can allow us to test examples in other languages, such as shell scripts or even HTTP calls.
 Sybil_ also has a more flexible syntax for constructing invisible code blocks and for skipping tests.
 
 There are fundamentally two options for applying doctests, then:
 
-1. Use pytest-doctestplus_ to test all docstrings.
+1. Use pytest-doctestplus_ to test all doctests.
 
-2. Use pytest-doctestplus_ to only test doctests in examples, and then use Sybil to test reStructuredText pages.
+2. Use pytest-doctestplus_ to only test doctests in docstrings, and then use Sybil to test reStructuredText pages.
 
 From a capability standpoint, the second option is more appealing as it allows greater flexibility in testing examples in reStructuredText documentation.
 The drawback is that developers must be aware of the distinction of writing doctests in these two environments, and learn the skip syntax for each.
@@ -762,10 +770,10 @@ This is a useful escape valve for cells that are difficult or impossible to test
 
 The sanitization approach is more technically involved.
 In this mode, we would provide an ini-format file with regular expressions and replacement strings.
-nbval_ runs these regular expressions over the outputs and replaces the matched strings with a simplified replacement string.
+nbval_ runs these regular expressions over the outputs and replaces the matched strings with a simplified replacement string that is tested against.
 
 nbval_ has additional advanced features that are useful.
-One is the ``# NBVAL_RAISES_EXCEPTION`` code comment that permits a cell to raise and exception, and directs nbval_ to test the traceback.
+One is the ``# NBVAL_RAISES_EXCEPTION`` code comment that permits a cell to raise an exception, and directs nbval_ to test the traceback.
 
 Instead, of using Python code comments (which are user-visible), cells can also be annotated with Jupyter-native tags.
 
@@ -774,7 +782,7 @@ Finally, nbval_ can be configured to skip certain output types, such as ``stderr
 nbval_ is known to be compatible with the xdist plugin for running tests in parallel.
 In this case, an entire notebook would be run together as a unit.
 
-It is know current known how to control which Jupyter kernel pytest_ or nbval_ runs notebooks with, or whether this is configurable.
+It is not currently known how to control which Jupyter kernel pytest_ or nbval_ runs notebooks with, or whether this is configurable.
 
 Overall, nbval_ is an excellent and comprehensive solution for ensuring that Jupyter Notebooks are reproducible.
 One caveat that must be recognized, though, is that nbval_ requires that notebooks be committed into documentation repositories with their outputs committed.
@@ -787,7 +795,7 @@ This reinforces the notion that Jupyter Notebooks should only be used in special
 nbpages and nbconvert as a testing device
 -----------------------------------------
 
-The one potential drawback of the nbval_/pytest_ approach, described :ref:`above <nbval-intro>` is notebooks must be committed with their outputs.
+The one potential drawback of the nbval_/pytest_ approach, described :ref:`above <nbval-intro>`, is that notebooks must be committed with their outputs.
 As discussed, committing outputs makes Git diffs more difficult to interpret and increases the difficulty associated with resolving merge conflicts.
 nbpages_, developed at the Space Telescope Science Institute, attempts to work around this issue by creating a notebook publishing workflow that rigorously uses notebooks committed to Git without outputs.
 
@@ -822,7 +830,7 @@ The LSST Science Pipelines test environment
 
 The LSST Science Pipelines is tested by ci.lsst.codes, a Jenkins CI deployment.
 Developers run the stack-os-matrix job to test the LSST Science Pipelines during their regular development.
-Since stack-os-matrix run the :command:`scons` command, which in turn runs pytest_, in doctests, notebooks, and scripts will be executed in the stack-os-matrix environment.
+Since stack-os-matrix run the :command:`scons` command, which in turn runs pytest_, tests for doctests, notebooks, and scripts will be executed in the stack-os-matrix environment.
 
 Parallelism is provided "for free" by virtue of the pytest xdist plugin.
 
@@ -831,7 +839,7 @@ Any datasets that are referenced by the examples must be avilable in the stack-o
 The Nublado test environment
 ----------------------------
 
-Examples for the LSST Science Platform generally assume access the capabilities of the LSP.
+Examples for the LSST Science Platform generally assume access to the capabilities of the LSP.
 For example, an example notebook for the notebook aspect will assume access to mounted filesystems and data access APIs.
 These example notebooks will also assume that certain software is installed, whether they are command-line tools or Python packages.
 This necessitates that examples for the LSP should be tested on the LSP itself.
@@ -848,7 +856,7 @@ Such a command might do this:
 
 In this scenario, the documentation would be built in a CI environment (likely ci.lsst.codes), but the tests would run in Nublado itself.
 Another interesting possibility is that the same API access to Nublado could also be used to build the documentation itself, in addition to testing the documentation.
-This would be useful for allow custom Sphinx extensions, that LSST writes, to introspect the Nublado environment and automatically document features such as available Python packages, command-line tools, and datasets on shared file storage.
+This would be useful for enabling custom Sphinx extensions, that LSST writes, to introspect the Nublado environment and automatically document features such as available Python packages, command-line tools, and datasets on shared file storage.
 
 All of this, however, requires that LSST develop API access to Jupyter to spawn and operate headless JupyterLab pods.
 

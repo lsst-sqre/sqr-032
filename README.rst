@@ -14,7 +14,13 @@ Rendering and testing examples and tutorials in LSST documentation
 SQR-032
 =======
 
-Examples and tutorials are important elements of successful documentation. They show how something can be accomplished, rather than merely describing it. Such examples are only useful if they are correct, though. Automated testing infrastructure is the best way to ensure that examples are correct when they are committed, and remain correct as a project evolves. Recently, in DMTN-085, the QA Strategy Working Group (QAWG)  issued specific recommendations to improve how examples are managed and tested in LSST's documentation. This technote analyzes these recommendations and translates them into technical requirements. Subsequently, this technote also provides an overview of how example code management and testing has been implemented.
+Examples and tutorials are important elements of successful documentation.
+They show the reader how something can be accomplished, which is often more powerful and effective than a mere description.
+Such examples are only useful if they are correct, though.
+Automated testing infrastructure is the best way to ensure that examples are correct when they are committed, and remain correct as a project evolves.
+Recently, in DMTN-085, the QA Strategy Working Group (QAWG)  issued specific recommendations to improve how examples are managed and tested in LSST's documentation.
+This technote analyzes these recommendations and translates them into technical requirements.
+Subsequently, this technote also provides an overview of how example code management and testing has been implemented.
 
 **Links:**
 
