@@ -809,6 +809,49 @@ Further, the fact that nbval_ relies on notebooks where the outputs are included
 This is a useful capability so that developer builds can run without a massive computational investment.
 In summary, we should adopt nbval_ for projects such as the `pipelines.lsst.io <https://pipelines.lsst.io>`_ and `nb.lsst.io <https://nb.lsst.io>`_ documentation projects.
 
+.. _notebook-execution:
+
+Execution environments for testing examples and scripts
+=======================================================
+
+Since examples (whether they are are doctests or notebooks) and scripts are tested through pytest_, the environment where they are tested corresponds to the environment where the corresponding software is tested or documentation is built.
+This section considers the specific execution for different LSST DM projects.
+
+The LSST Science Pipelines test environment
+-------------------------------------------
+
+The LSST Science Pipelines is tested by ci.lsst.codes, a Jenkins CI deployment.
+Developers run the stack-os-matrix job to test the LSST Science Pipelines during their regular development.
+Since stack-os-matrix run the :command:`scons` command, which in turn runs pytest_, in doctests, notebooks, and scripts will be executed in the stack-os-matrix environment.
+
+Parallelism is provided "for free" by virtue of the pytest xdist plugin.
+
+Any datasets that are referenced by the examples must be avilable in the stack-os-matrix job as well.
+
+The Nublado test environment
+----------------------------
+
+Examples for the LSST Science Platform generally assume access the capabilities of the LSP.
+For example, an example notebook for the notebook aspect will assume access to mounted filesystems and data access APIs.
+These example notebooks will also assume that certain software is installed, whether they are command-line tools or Python packages.
+This necessitates that examples for the LSP should be tested on the LSP itself.
+Mocking the LSP is not practical.
+
+To do this, we envision adding a capability to Nublado (the LSST JupyterLab-based platform) that allows API-based execution.
+That is, through an HTTP API, the documentation build platform should be able to request that Nublado start up a headless pod running JupyterLab and execute a command.
+Such a command might do this:
+
+#. Clone a Git repository (at a specific commit) that contains the documentation being tested.
+#. Temporarily install additional Python dependencies needed for the documentation and its tests.
+#. Run a shell command (likely :command:`pytest`) to execute the tests.
+#. Gather the output of the tests and return it to the caller.
+
+In this scenario, the documentation would be built in a CI environment (likely ci.lsst.codes), but the tests would run in Nublado itself.
+Another interesting possibility is that the same API access to Nublado could also be used to build the documentation itself, in addition to testing the documentation.
+This would be useful for allow custom Sphinx extensions, that LSST writes, to introspect the Nublado environment and automatically document features such as available Python packages, command-line tools, and datasets on shared file storage.
+
+All of this, however, requires that LSST develop API access to Jupyter to spawn and operate headless JupyterLab pods.
+
 References
 ==========
 
