@@ -707,6 +707,35 @@ Similar to the ``invisible-code-block`` directive provided by Sybil_, the ``test
 
 Finally, sphinx.ext.doctest_ provides means for conditionally skipping tests of examples.
 
+.. _doctest-summary:
+
+Summary of doctest testing approaches
+-------------------------------------
+
+There are several approaches to validating doctest-based examples that differ based on how they are run, where they run, and what features they add beyond the basic doctest library.
+
+Of the options listed, we immediately dismiss the strickly pytest-driven approach as pytest-doctestplus_ provides an equivalent, but improved, feature set.
+We also dismiss sphinx.ext.doctest_ approach because it occurs during the documentation build, rather than during regular testing (driven by pytest).
+We believe that documentation testing with pytest-based testing brings documentation integrity to the forefront of developer culture, and helps ensure that breakages of examples are more visible.
+This reasoning also weights heavily in our :ref:`chosen approach to testing Jupyter Notebooks <testing-notebooks-summary>`.
+
+The two approaches that are worthwhile to pursue are pytest-doctestplus_ and Sybil_.
+pytest-doctestplus_ is advantageous because it can be used for both doctest examples in docstrings and in reStructuredText pages.
+As such, pytest-doctestplus_ provides a uniform system for testing all doctests that developers write.
+
+On the other hand, Sybil_ only operates on reStructuredText pages.
+Compared to pytest-doctestplus_, though, Sybil_ has an extensible parsers system that can allow us to test examples in other languages, such as shell scripts or even HTTP calls.
+Sybil_ also has a more flexible syntax for constructing invisible code blocks and for skipping tests.
+
+There are fundamentally two options for applying doctests, then:
+
+1. Use pytest-doctestplus_ to test all docstrings.
+
+2. Use pytest-doctestplus_ to only test doctests in examples, and then use Sybil to test reStructuredText pages.
+
+From a capability standpoint, the second option is more appealing as it allows greater flexibility in testing examples in reStructuredText documentation.
+The drawback is that developers must be aware of the distinction of writing doctests in these two environments, and learn the skip syntax for each.
+
 .. _testing-notebooks:
 
 Testing Jupyter Notebooks
