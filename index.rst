@@ -287,8 +287,10 @@ These files seem to be tests of an ad hoc nature.
 Examples of this are the `ticket647.cc`_ and `maskIo2.cc`_ programs in ``afw``.
 The former appears to reference a ticket from the deprecated Trac system, and `maskIo2.cc`_ seems to test memory management in C++ code.
 
-Part of the issue here is that DM doesn't write unit tests in C++.
-Instead, all unit tests are written in Python, though those tests may exercise C++ code through Pybind11 bindings.
+DM does have a `testing system for C++ code`__.
+Ad hoc tests, like the ones identified, above should be moved out of |examples| and into the |tests| directory.
+
+.. __: https://developer.lsst.io/coding/unit-test-policy.html#testing-frameworks
 
 .. _review-data-in-examples:
 
@@ -297,6 +299,7 @@ Data files in examples/ directories
 
 In rare cases, data files are located in the |examples| directories of packages.
 One such file is NewSuprimeCam.paf_ in ``afw``, which has no references anywhere in the ``afw`` codebase.
+Orphaned files such as this one should be removed.
 
 .. _review-doctests:
 
