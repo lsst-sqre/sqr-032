@@ -19,7 +19,7 @@ QAWG Recommendations relevant to examples in documentation
 ==========================================================
 
 The work planned and described in this technote was prompted by recommendations made by the QAWG in :dmtn:`085`.
-In short, the QAWG recommended that LSST DM adopted a systematic approach to producing, maintaining, and testing examples in our end-user documentation projects.
+In short, the QAWG recommended that LSST DM adopt a systematic approach to producing, maintaining, and testing examples in our end-user documentation projects.
 For reference, the relevant recommendations are:
 
 .. _qawg-rec-13:
@@ -81,7 +81,7 @@ Some of these scripts use the standard `argparse` package to process command-lin
 General-purpose scripts in examples/
 ------------------------------------
 
-Some useful utility scripts are distributed in the :file:`eamples` directory of packages, rather than :file:`bin.src`.
+Some useful utility scripts are distributed in the :file:`examples` directory of packages, rather than :file:`bin.src`.
 For example, the plotSkyMap.py_ script, found in the :file:`examples` directory of the skymap_ package uses `argparse` and is a general purpose utility that is potentially testable and usable.
 The problem with scripts like plotSkyMap.py_ is that they are not installed for users.
 Instead, users need to reference them by their absolute path, often using environment variables created by EUPS:
@@ -101,7 +101,7 @@ It makes sense to move all command-line scripts into the :file:`bin.src` directo
 Non-reusable utility scripts in examples/
 -----------------------------------------
 
-Another category of scripts in :file:`examples` non-reusable utility scripts.
+Another category of scripts in :file:`examples` is non-reusable utility scripts.
 For example, the pipe_analysis_ package includes a script called parseLogs.py_ in its :file:`examples` directory.
 parseLogs.py_ isn't intended to be used directly since it is hard-coded in a way that is very specific at not reproducible:
 
@@ -313,7 +313,7 @@ For example:
 [1, 2, 3, 4]
 
 doctests_ can be found in docstrings (particularly the `Examples section <https://developer.lsst.io/python/numpydoc.html#py-docstring-examples>`__ of a Numpydoc-formatted Python docstring), as well as in reStructuredText files.
-Because docstrings show both inputs and inputs, they work well as testable examples because test harnesses can run the example and verify that the output matches the expected output.
+Because docstrings show both inputs and outputs, they work well as testable examples because test harnesses can run the example and verify that the output matches the expected output.
 
 .. _review-rst-examples:
 
@@ -728,7 +728,7 @@ We believe that documentation testing with pytest-based testing brings documenta
 This reasoning also weights heavily in our :ref:`chosen approach to testing Jupyter Notebooks <testing-notebooks-summary>`.
 
 The two approaches that are worthwhile to pursue are pytest-doctestplus_ and Sybil_.
-pytest-doctestplus_ is advantageous because it can be used for both doctest examples in docstrings and in reStructuredText pages.
+The pytest-doctestplus_ extension is advantageous because it can be used for both doctest examples in docstrings and in reStructuredText pages.
 As such, pytest-doctestplus_ provides a uniform system for testing all doctests that developers write.
 
 On the other hand, Sybil_ only operates on reStructuredText pages.
@@ -739,7 +739,7 @@ There are fundamentally two options for applying doctests, then:
 
 1. Use pytest-doctestplus_ to test all doctests.
 
-2. Use pytest-doctestplus_ to only test doctests in docstrings, and then use Sybil to test reStructuredText pages.
+2. Use pytest-doctestplus_ to only test doctests in docstrings, and then use Sybil_ to test reStructuredText pages.
 
 From a capability standpoint, the second option is more appealing as it allows greater flexibility in testing examples in reStructuredText documentation.
 The drawback is that developers must be aware of the distinction of writing doctests in these two environments, and learn the skip syntax for each.
@@ -761,7 +761,7 @@ In this way, nbval_ treats Jupyter Notebooks as sophisticated doctests.
 nbval_ provides different levels of control over how the output stored in the Jupyter Notebook is compared against output from executing the notebook in a test environment:
 
 1. All cells can be tested by running as :command:`pytest --nbval`.
-2. Only cells specially marked with a ``# NBVAL_CHECK_OUTPUT`` marker comment can be tested by running as :command:`pytest --nbval-lax``.
+2. Only cells specially marked with a ``# NBVAL_CHECK_OUTPUT`` marker comment can be tested by running as :command:`pytest --nbval-lax`.
 3. Checking all cells, but only after “sanitizing” the reproduced and stored outputs to avoid testing outputs that are intrinsically semi-random.
 
 The ``--nbval-lax`` mode is a low buy-in means of testing notebooks by allowing authors to mark just those cells that are representative and known to be testable.
@@ -775,7 +775,7 @@ nbval_ runs these regular expressions over the outputs and replaces the matched 
 nbval_ has additional advanced features that are useful.
 One is the ``# NBVAL_RAISES_EXCEPTION`` code comment that permits a cell to raise an exception, and directs nbval_ to test the traceback.
 
-Instead, of using Python code comments (which are user-visible), cells can also be annotated with Jupyter-native tags.
+Instead of using Python code comments (which are user-visible), cells can also be annotated with Jupyter-native tags.
 
 Finally, nbval_ can be configured to skip certain output types, such as ``stderr`` or ``application/javascript``.
 
