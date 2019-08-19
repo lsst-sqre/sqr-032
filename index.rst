@@ -761,7 +761,7 @@ In this way, nbval_ treats Jupyter Notebooks as sophisticated doctests.
 nbval_ provides different levels of control over how the output stored in the Jupyter Notebook is compared against output from executing the notebook in a test environment:
 
 1. All cells can be tested by running as :command:`pytest --nbval`.
-2. Only cells specially marked with a ``# NBVAL_CHECK_OUTPUT`` marker comment can be tested by running as :command:`pytest --nbval-lax``.
+2. Only cells specially marked with a ``# NBVAL_CHECK_OUTPUT`` marker comment can be tested by running as :command:`pytest --nbval-lax`.
 3. Checking all cells, but only after “sanitizing” the reproduced and stored outputs to avoid testing outputs that are intrinsically semi-random.
 
 The ``--nbval-lax`` mode is a low buy-in means of testing notebooks by allowing authors to mark just those cells that are representative and known to be testable.
@@ -775,7 +775,7 @@ nbval_ runs these regular expressions over the outputs and replaces the matched 
 nbval_ has additional advanced features that are useful.
 One is the ``# NBVAL_RAISES_EXCEPTION`` code comment that permits a cell to raise an exception, and directs nbval_ to test the traceback.
 
-Instead, of using Python code comments (which are user-visible), cells can also be annotated with Jupyter-native tags.
+Instead of using Python code comments (which are user-visible), cells can also be annotated with Jupyter-native tags.
 
 Finally, nbval_ can be configured to skip certain output types, such as ``stderr`` or ``application/javascript``.
 
