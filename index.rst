@@ -287,8 +287,10 @@ These files seem to be tests of an ad hoc nature.
 Examples of this are the `ticket647.cc`_ and `maskIo2.cc`_ programs in ``afw``.
 The former appears to reference a ticket from the deprecated Trac system, and `maskIo2.cc`_ seems to test memory management in C++ code.
 
-Part of the issue here is that DM doesn't write unit tests in C++.
-Instead, all unit tests are written in Python, though those tests may exercise C++ code through Pybind11 bindings.
+DM does have a `testing system for C++ code`__.
+Ad hoc tests, like the ones identified, above should be moved out of |examples| and into the |tests| directory.
+
+.. __: https://developer.lsst.io/coding/unit-test-policy.html#testing-frameworks
 
 .. _review-data-in-examples:
 
@@ -297,6 +299,7 @@ Data files in examples/ directories
 
 In rare cases, data files are located in the |examples| directories of packages.
 One such file is NewSuprimeCam.paf_ in ``afw``, which has no references anywhere in the ``afw`` codebase.
+Orphaned files such as this one should be removed.
 
 .. _review-doctests:
 
@@ -435,7 +438,7 @@ Together, doctests and Jupyter Notebooks cover scenarios for most of the example
 One scenario that isn't addressed, though, are C++ examples that are currently found in the |examples| directories of packages.
 Neither doctests nor Jupyter Notebooks support C++ code.
 
-For C++ examples, it may best to continue the existing pattern of placing source files in the |examples| directory, having scons run the compilation of those examples, and referencing those examples from the documentation.
+For C++ examples, it may best to continue the existing pattern of placing source files in the |examples| directory, having SCons run the compilation of those examples, and referencing those examples from the documentation.
 Note that displaying files from the |examples| directory still needs to be accommodated in the Sphinx builds as mentioned in :ref:`review-examples-in-examples`.
 
 .. _summary-of-example-scenarios:
@@ -443,7 +446,7 @@ Note that displaying files from the |examples| directory still needs to be accom
 Summary of documentation scenarios and technologies
 ---------------------------------------------------
 
-In summary, these are technologies that DM should adopt to produce examples in, and the appropriate scenarios for each technology:
+In summary, these are technologies that DM should adopt to produce examples and the appropriate scenarios for each technology:
 
 Python doctests
     - "Examples" sections of Python docstrings.
@@ -493,9 +496,9 @@ In general, there are two types of approaches: run doctests through pytest while
 Running doctests through pytest
 -------------------------------
 
-The main testing command for the Stack (of which the LSST Science Pipelines is part of) is :command:`scons test`.
+The main testing command for the Stack (which the LSST Science Pipelines is part of) is :command:`scons tests`.
 SCons, in turn, runs pytest_, which provides test discovery, execution, and reporting.
-Integrating doctests with pytest_, and thus :command:`scons test` is appealing because it would enable us to test doctests without changing developer workflows.
+Integrating doctests with pytest_, and thus :command:`scons tests` is appealing because it would enable us to test doctests without changing developer workflows.
 
 Pytest `supports doctests`__ through a ``--doctest-modules`` command-line argument.
 In principle, pytest should discover all Python modules in the package and run their doctests, similarly to how it discovers test modules and executes them.
@@ -829,12 +832,12 @@ The LSST Science Pipelines test environment
 -------------------------------------------
 
 The LSST Science Pipelines is tested by ci.lsst.codes, a Jenkins CI deployment.
-Developers run the stack-os-matrix job to test the LSST Science Pipelines during their regular development.
-Since stack-os-matrix run the :command:`scons` command, which in turn runs pytest_, tests for doctests, notebooks, and scripts will be executed in the stack-os-matrix environment.
+Developers run the ``stack-os-matrix`` job to test the LSST Science Pipelines during their regular development.
+Since ``stack-os-matrix`` runs the :command:`scons` command, which in turn runs pytest_, tests for doctests, notebooks, and scripts will be executed in the stack-os-matrix environment.
 
 Parallelism is provided "for free" by virtue of the pytest xdist plugin.
 
-Any datasets that are referenced by the examples must be avilable in the stack-os-matrix job as well.
+Any datasets that are referenced by the examples must be available in the ``stack-os-matrix`` job as well.
 
 The Nublado test environment
 ----------------------------
@@ -915,3 +918,4 @@ References
 .. |14| replace:: :ref:`QAWG-REC-14 <qawg-rec-14>`
 .. |15| replace:: :ref:`QAWG-REC-15 <qawg-rec-15>`
 .. |examples| replace:: :file:`examples`
+.. |tests| replace:: :file:`tests`
